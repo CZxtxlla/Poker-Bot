@@ -53,18 +53,15 @@ def get_poker_hand_notation(card1: Card, card2: Card):
         Rank.NINE: "9", Rank.EIGHT: "8", Rank.SEVEN: "7", Rank.SIX: "6", Rank.FIVE: "5",
         Rank.FOUR: "4", Rank.THREE: "3", Rank.TWO: "2"
     }
-
-    # Extract rank and suit
+    
     rank1, rank2 = card1.rank, card2.rank
     suit1, suit2 = card1.suit, card2.suit
 
-    # Determine the correct order (high card first)
     if rank1 > rank2:
         high_rank, low_rank = rank1, rank2
     else:
         high_rank, low_rank = rank2, rank1
 
-    # Check if suited or offsuit
     suited = suit1 == suit2
     notation = f"{rank_map[high_rank]}{rank_map[low_rank]}{'s' if suited else 'o'}"
 
