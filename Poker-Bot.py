@@ -128,7 +128,7 @@ class TemplateBot(Bot):
 
         my_player = None
         for player in state.players:
-            if player.id == self.my_id:
+            if player.id == self.username:
                 my_player = player
                 break
 
