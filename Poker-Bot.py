@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 import argparse
-
+"klj;dsafihadsklfjadskl;f"
 from tg.bot import Bot
 import time
 
