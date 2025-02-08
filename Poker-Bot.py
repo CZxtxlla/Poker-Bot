@@ -65,7 +65,7 @@ def get_poker_hand_notation(card1: Card, card2: Card):
     suited = suit1 == suit2
     notation = f"{rank_map[high_rank]}{rank_map[low_rank]}{'s' if suited else 'o'}"
 
-    return notation
+    return new_hand
 
 poker_ranking = {
     'AA': 0, 'AKs': 2, 'AQs': 2, 'AJs': 3, 'ATs': 5, 'A9s': 8, 'A8s': 10, 'A7s': 13, 'A6s': 14, 'A5s': 12, 'A4s': 14, 'A3s': 14, 'A2s': 17,
