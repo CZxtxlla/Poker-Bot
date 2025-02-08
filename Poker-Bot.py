@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
 
 
-card1, card2 = cards
+card1, card2 = hand
 
 def get_poker_hand_notation(card1: Card, card2: Card):
     rank_map = {
