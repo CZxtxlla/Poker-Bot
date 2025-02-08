@@ -22,7 +22,16 @@ class TemplateBot(Bot):
     def act(self, state, hand):
         print('asked to act')
         print('acting', state, hand, self.my_id)
-        return {'type': 'call'}
+
+        my_player = next(player for player in state.players if player.id == self.my_id)
+
+        if (preflop(hand) > 24):
+            return {'type': 'flop'}
+        else if (state.round == pokerTypes.PokerRound.PRE_FLOP}): 
+            return {'type': 'raise', 'amount': my_player.stack}
+        else:
+            return {'type': 'call'}
+
 
     def opponent_action(self, action, player):
         print('opponent action?', action, player)
@@ -37,6 +46,66 @@ class TemplateBot(Bot):
 if __name__ == "__main__":
     bot = TemplateBot(args.host, args.port, args.room)
     asyncio.run(bot.start())
+
+def preflop(hand):
+    if len(hand) != 2:
+        raise ValueError("Hand must contain exactly 2 cards.")
+
+    card1, card2 = hand
+
+    # Map the enum values to their common string representations.
+    rank_to_str = {
+        Rank.ACE: "A",
+        Rank.KING: "K",
+        Rank.QUEEN: "Q",
+        Rank.JACK: "J",
+        Rank.TEN: "T",
+        Rank.NINE: "9",
+        Rank.EIGHT: "8",
+        Rank.SEVEN: "7",
+        Rank.SIX: "6",
+        Rank.FIVE: "5",
+        Rank.FOUR: "4",
+        Rank.THREE: "3",
+        Rank.TWO: "2",
+    }
+
+    # If the two cards form a pair, just return the letter twice.
+    if card1.rank == card2.rank:
+        return poker_ranking[rank_to_str[card1.rank] * 2]
+
+    # For non-pairs, we want to order the cards with the highest rank first.
+    # In typical poker, Ace is considered highest, so we define a custom order.
+    poker_rank_order = {
+        Rank.ACE: 14,
+        Rank.KING: 13,
+        Rank.QUEEN: 12,
+        Rank.JACK: 11,
+        Rank.TEN: 10,
+        Rank.NINE: 9,
+        Rank.EIGHT: 8,
+        Rank.SEVEN: 7,
+        Rank.SIX: 6,
+        Rank.FIVE: 5,
+        Rank.FOUR: 4,
+        Rank.THREE: 3,
+        Rank.TWO: 2,
+    }
+
+    # Sort cards in descending order by their poker ranking value.
+    sorted_cards = sorted(hand, key=lambda c: poker_rank_order[c.rank], reverse=True)
+    first_card, second_card = sorted_cards
+
+    # Build the string using the rank abbreviations.
+    combo = rank_to_str[first_card.rank] + rank_to_str[second_card.rank]
+
+    # Append suited/offsuit marker.
+    if first_card.suit == second_card.suit:
+        combo += "s"
+    else:
+        combo += "o"
+
+    return poker_ranking[combo]
 
 
 poker_ranking = {
