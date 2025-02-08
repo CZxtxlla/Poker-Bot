@@ -42,6 +42,34 @@ if __name__ == "__main__":
 
 
 
+
+
+
+card1, card2 = cards_given
+
+def get_poker_hand_notation(card1: Card, card2: Card):
+    rank_map = {
+        Rank.ACE: "A", Rank.KING: "K", Rank.QUEEN: "Q", Rank.JACK: "J", Rank.TEN: "T",
+        Rank.NINE: "9", Rank.EIGHT: "8", Rank.SEVEN: "7", Rank.SIX: "6", Rank.FIVE: "5",
+        Rank.FOUR: "4", Rank.THREE: "3", Rank.TWO: "2"
+    }
+
+    # Extract rank and suit
+    rank1, rank2 = card1.rank, card2.rank
+    suit1, suit2 = card1.suit, card2.suit
+
+    # Determine the correct order (high card first)
+    if rank1 > rank2:
+        high_rank, low_rank = rank1, rank2
+    else:
+        high_rank, low_rank = rank2, rank1
+
+    # Check if suited or offsuit
+    suited = suit1 == suit2
+    notation = f"{rank_map[high_rank]}{rank_map[low_rank]}{'s' if suited else 'o'}"
+
+    return notation
+
 poker_ranking = {
     'AA': 0, 'AKs': 2, 'AQs': 2, 'AJs': 3, 'ATs': 5, 'A9s': 8, 'A8s': 10, 'A7s': 13, 'A6s': 14, 'A5s': 12, 'A4s': 14, 'A3s': 14, 'A2s': 17,
     'AKo': 5, 'KK': 1, 'KQs': 3, 'KJs': 3, 'KTs': 6, 'K9s': 10, 'K8s': 16, 'K7s': 19, 'K6s': 24, 'K5s': 25, 'K4s': 25, 'K3s': 26, 'K2s': 26,
