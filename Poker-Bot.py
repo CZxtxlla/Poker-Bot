@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
 card1, card2 = hand
 
-def get_poker_hand_notation(card1: Card, card2: Card):
+def get_poker_hand_notation(card1, card2):
     rank_map = {
         Rank.ACE: "A", Rank.KING: "K", Rank.QUEEN: "Q", Rank.JACK: "J", Rank.TEN: "T",
         Rank.NINE: "9", Rank.EIGHT: "8", Rank.SEVEN: "7", Rank.SIX: "6", Rank.FIVE: "5",
