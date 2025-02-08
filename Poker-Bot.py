@@ -14,7 +14,7 @@ parser.add_argument('--host', type=str, default='localhost',
                     help='The host to connect to the server on')
 parser.add_argument('--room', type=str, default='my-new-room',
                     help='The room to connect to')
-
+jkgdakjasjkd
 args = parser.parse_args()
 
 # Always call
