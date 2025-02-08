@@ -125,13 +125,24 @@ poker_ranking = {
 
 class TemplateBot(Bot):
     def act(self, state, hand):
+
+        my_player = None
+        for player in state.players:
+            if player.id == self.my_id:
+                my_player = player
+                break
+
+        if my_player is None:
+            raise ValueError(f"No player with id {self.my_id} found in state.players")
+
+        
         print('asked to act')
         print('acting', state, hand, self.my_id)
 
         if (state.round == 'pre-flop'):
             print('preflop', preflop(hand))
             if (preflop(hand) > 24):
-                return {'type': 'raise', 'amount': 1000}
+                return {'type': 'raise', 'amount': my_player.stack}
         else:
             return {'type': 'call'}
 
