@@ -317,6 +317,7 @@ def calculate_outs(hand, state):
 
 class TemplateBot(Bot):
     def act(self, state, hand):
+        
         for card in hand:
             print (card.suit, card.rank)
             
@@ -357,12 +358,14 @@ class TemplateBot(Bot):
                     return {'type': 'raise', 'amount': my_player.stack}
                 else:                            
                     return {'type': 'raise', 'amount': 2/3 * state.pot}
+            else:
+                return {'type': 'fold'}
         else:
             strength = hand_strength(hand,state)[0]
             if strength >= 0.4:
                 return {'type': 'raise', 'amount': my_player.stack}
             else:
-                return {'type': 'call'}
+                return {'type': 'fold'}
             
 
             
