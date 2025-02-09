@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import random
 import asyncio
 import argparse
 from tg.bot import Bot
@@ -45,7 +46,6 @@ class Suit(Enum):
 def preflop(hand):
     if len(hand) != 2:
         raise ValueError("Hand must contain exactly 2 cards.")
-
     card1, card2 = hand
 
 
@@ -328,9 +328,9 @@ class TemplateBot(Bot):
 
         if (state.round == 'pre-flop'):
             print('preflop', preflop(hand))
-            if (preflop(hand) < 30):
-                return {'type': 'call'}
-                #return {'type': 'raise', 'amount': my_player.stack}
+            num = random.randint(-8, 8)
+            if (preflop(hand) <= preflop(hand) + abs(num):
+                return {'type': 'call', 'amount': state.target_bet - player.current_bet + 0.0001}
             else:
                 return {'type': 'fold'}
                 
