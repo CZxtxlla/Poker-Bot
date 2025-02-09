@@ -328,29 +328,30 @@ class TemplateBot(Bot):
 
         if (state.round == 'pre-flop'):
             print('preflop', preflop(hand))
-            if (preflop(hand) > 24):
-                return {'type': 'raise', 'amount': my_player.stack}
+            if (preflop(hand) < 30):
+                return {'type': 'call'}
+                #return {'type': 'raise', 'amount': my_player.stack}
+            else:
+                return {'type': 'fold'}
                 
         elif state.round == 'flop' or state.round == 'turn':
-            
             num_outs = calculate_outs (hand, state)
+            strength = hand_strength(hand, state)[0]
             
-            print ("I have" + num_outs + "outs!")
+            print ("I have {} outs!".format(num_outs))
             
             odds_needed_to_call = break_even_odds[num_outs]
+            adjusted_threshold = odds_needed_to_call * (1 - 0.6 * strength)
 
             pot_odds = state.pot / (state.target_bet - player.current_bet + 0.0001)
 
-            if pot_odds > odds_needed_to_call and pot_odds < odds_needed_to_call*2:
+            if pot_odds > adjusted_threshold and pot_odds < adjusted_threshold*2:
                 return {'type': 'call'}
-            elif pot_odds >= odds_needed_to_call * 2:
+            elif pot_odds >= adjusted_threshold * 2:
                 if (my_player.stack < 2/3 * state.pot):
                     return {'type': 'raise', 'amount': my_player.stack}
                 else:                            
                     return {'type': 'raise', 'amount': 2/3 * state.pot}
-            else:
-                return {'type': 'fold'}
-
         else:
             strength = hand_strength(hand,state)[0]
             if strength >= 0.4:
