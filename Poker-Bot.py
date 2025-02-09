@@ -335,14 +335,16 @@ class TemplateBot(Bot):
         call_ratio = price_to_call/state.pot
 
         if call_ratio < 0.1:
-            threshold_multiplier = 0.9  # Cheaper call
+            threshold_multiplier = 0.8  # cheaper call
         elif call_ratio < 0.2:
             threshold_multiplier = 1.0
         elif call_ratio < 0.3:
-            threshold_multiplier = 1.1  # More expensive call
+            threshold_multiplier = 1.3  # more expensive call
+        elif call_ratio < 0.4:
+            threshold_multiplier = 1.5
         else:
-            threshold_multiplier = 1.2
-            
+            threshold_multiplier = 1.7
+                    
         print('asked to act')
         print('acting', state, hand, self.my_id)
 
