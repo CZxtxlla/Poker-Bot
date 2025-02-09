@@ -316,7 +316,10 @@ def calculate_outs(hand, state):
 
 
 class TemplateBot(Bot):
+    
     def act(self, state, hand):
+
+         
         
         for card in hand:
             print (card.suit, card.rank)
@@ -326,7 +329,20 @@ class TemplateBot(Bot):
             if player.id == self.username:
                 my_player = player
                 break
-        
+                
+        price_to_call = state.target_bet - my_player.current_bet
+
+        call_ratio = price_to_call/state.pot
+
+        if call_ratio < 0.1:
+            threshold_multiplier = 0.9  # Cheaper call
+        elif call_ratio < 0.2:
+            threshold_multiplier = 1.0
+        elif call_ratio < 0.3:
+            threshold_multiplier = 1.1  # More expensive call
+        else:
+            threshold_multiplier = 1.2
+            
         print('asked to act')
         print('acting', state, hand, self.my_id)
 
@@ -341,15 +357,16 @@ class TemplateBot(Bot):
                 return {'type': 'fold'}
                 
         elif state.round == 'flop' or state.round == 'turn':
+            
             num_outs = calculate_outs (hand, state)
             strength = hand_strength(hand, state)[0]
             
             print ("I have {} outs!".format(num_outs))
             
             odds_needed_to_call = break_even_odds[num_outs]
-            adjusted_threshold = odds_needed_to_call * (1 - 0.6 * strength)
+            adjusted_threshold = odds_needed_to_call * (1 - 0.6 * strength) * threshold_multiplier
 
-            pot_odds = state.pot / (state.target_bet - player.current_bet + 0.0001)
+            pot_odds = state.pot / (price_to_call + 0.0001)
 
             if pot_odds > adjusted_threshold and pot_odds < adjusted_threshold*2:
                 return {'type': 'call'}
