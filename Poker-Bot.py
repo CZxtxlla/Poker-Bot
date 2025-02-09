@@ -122,7 +122,7 @@ poker_ranking = {
     'A2o': 54, 'K2o': 69, 'Q2o': 79, 'J2o': 87, 'T2o': 94, '92o': 97, '82o': 99, '72o': 100, '62o': 95, '52o': 84, '42o':86, '32o': 91, '22': 24
     }
 
-flop_to_turn_odds = {
+break_even_odds = {
     20: 1.35,
     19: 1.47,
     18: 1.61,
@@ -142,51 +142,8 @@ flop_to_turn_odds = {
     4: 10.75,
     3: 14.67,
     2: 22.50,
-    1: 46.00
-}
-turn_to_river_odds = {
-    20: 1.30,
-    19: 1.42,
-    18: 1.56,
-    17: 1.71,
-    16: 1.88,
-    15: 2.07,
-    14: 2.29,
-    13: 2.54,
-    12: 2.83,
-    11: 3.18,
-    10: 3.60,
-    9: 4.11,
-    8: 4.75,
-    7: 5.57,
-    6: 6.67,
-    5: 7.69,
-    4: 10.50,
-    3: 13.33,
-    2: 22.00,
-    1: 45.00
-}
-turn_and_river_odds = {
-    20: 0.48,
-    19: 0.54,
-    18: 0.60,
-    17: 0.67,
-    16: 0.75,
-    15: 0.85,
-    14: 0.95,
-    13: 1.08,
-    12: 1.22,
-    11: 1.40,
-    10: 1.60,
-    9: 1.86,
-    8: 2.17,
-    7: 2.60,
-    6: 3.15,
-    5: 3.93,
-    4: 5.06,
-    3: 7.00,
-    2: 10.90,
-    1: 22.26
+    1: 46.0,
+    0: 100000000000000000000000
 }
 
 def calculate_outs(hand, state):
@@ -261,8 +218,28 @@ class TemplateBot(Bot):
             print('preflop', preflop(hand))
             if (preflop(hand) > 24):
                 return {'type': 'raise', 'amount': my_player.stack}
+                
         elif state.round == 'flop' or state.round == 'turn':
             num_outs = calculate_outs (hand, state)
+            
+            print ("I have" + num_outs + "outs!")
+            
+            odds_needed_to_call = break_even_odds[num_outs]
+
+            pot_odds = state.pot / (state.target_bet - player.current_bet + 0.0001)
+
+            if pot_odds > odds_needed_to_call and pot_odds < odds_needed_to_call*2:
+                return {'type': 'call'}
+            elif pot_odds >= odds_needed_to_call * 2:
+                if (my_player.stack < 2/3 * state.pot):
+                    return {'type': 'raise', 'amount': my_player.stack}
+                else:                            
+                    return {'type': 'raise', 'amount': 2/3 * state.pot}
+            else:
+                return {'type': 'fold'}
+                
+        elif state.round == 'river':
+            
 
         """
         if (preflop(hand) > 24):
