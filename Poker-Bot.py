@@ -341,7 +341,7 @@ class TemplateBot(Bot):
             else:
                 return {'type': 'fold'}
                 
-        elif state.round == 'river':
+       # elif state.round == 'river':
             
 
         """
