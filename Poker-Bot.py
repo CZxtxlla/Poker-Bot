@@ -250,56 +250,65 @@ break_even_odds = {
 }
 
 def calculate_outs(hand, state):
-    
-    combined = hand + state.cards # whole cards + community cards
+    combined_cards = hand + state.cards
 
-    # Flush draw check
+    # Flush draw: if 4 cards share the same suit, assume 9 outs.
     suit_counts = {}
-    for card in combined:
-        suit_counts[card.suit] = suit_counts.get(card.suit, 0) + 1
-
-    flush_outs = 0
+    for card in combined_cards:
+        suit = card.suit
+        suit_counts[suit] = suit_counts.get(suit, 0) + 1
+    flush_draw_outs = 0
     for suit, count in suit_counts.items():
-        if count == 4: 
-            flush_outs = max(flush_outs, 9) #9 outs for a flush draw (checking all suits so gotta take max)
+        if count == 4:
+            flush_draw_outs = 9
 
-    # Straight draw check
-    ranks = [card.rank for card in combined]
-    unique_ranks = set(ranks)
-
-    # If there's an ace it can be part of a bottom or top straight so should represent it twice.
-    if 1 in unique_ranks:
-        unique_ranks.add(14)
-
-    unique_ranks = sorted(unique_ranks)
-
-    straight_outs = 0
-
-    for starting_card in range(1, 11):
-        straight_seq = list(range(starting_card, starting_card + 5))
-
-        count = 0
-        
-        for rank in straight_seq: 
-            if rank in unique_ranks:
-                count +=1
-
-        if count == 4: #we have a straight draw!
-            # Identify the missing card.
-            missing = None
-
-            for rank in straigh_seq:
-                if rank not in unique_ranks:
-                    missing = rank
-        
-            #open-ended vs gutshot draw out counting
-            
-            if missing == straight_seq[0] or missing == straight_seq[-1]: #open-ended straight draw
-                straight_outs = max(straight_outs, 8)
+    # Straight draw: look for any 5-card sequence with exactly 4 cards present.
+    card_ranks = [card.rank for card in combined_cards]
+    unique_card_ranks = set(card_ranks)
+    if 1 in unique_card_ranks:
+        unique_card_ranks.add(14)  # treat Ace as high too
+    sorted_unique_ranks = sorted(unique_card_ranks)
+    straight_draw_outs = 0
+    for start_value in range(1, 11):
+        sequence = list(range(start_value, start_value + 5))
+        present_count = sum(1 for rank in sequence if rank in sorted_unique_ranks)
+        if present_count == 4:
+            missing_rank = next(rank for rank in sequence if rank not in sorted_unique_ranks)
+            # Open-ended if missing at either end, gutshot if missing in the middle.
+            if missing_rank == sequence[0] or missing_rank == sequence[-1]:
+                straight_draw_outs = max(straight_draw_outs, 8)
             else:
-                straight_outs = max(straight_outs, 4) #gutshot draw
+                straight_draw_outs = max(straight_draw_outs, 4)
 
-    return max(flush_outs, straight_outs) #actual number of outs
+    # Full house draw:
+   
+    full_house_draw_outs = 0
+    rank_frequency = {}
+    for card in combined_cards:
+        rank_frequency[card.rank] = rank_frequency.get(card.rank, 0) + 1
+
+    # Check for a pocket pair
+    if hand[0].rank == hand[1].rank:
+        pair_rank = hand[0].rank
+        if rank_frequency[pair_rank] == 2:
+            # Pair exists only in hand 
+            full_house_draw_outs = max(full_house_draw_outs, 2)
+        elif rank_frequency[pair_rank] == 3:
+            # Already hit a set
+            full_house_draw_outs = max(full_house_draw_outs, 1)
+
+    # Check if board contains any pair
+    board_rank_frequency = {}
+    for card in state.cards:
+        board_rank_frequency[card.rank] = board_rank_frequency.get(card.rank, 0) + 1
+    board_has_pair = any(count >= 2 for count in board_rank_frequency.values())
+    if board_has_pair:
+        full_house_draw_outs = max(full_house_draw_outs, 4)
+
+    return max(flush_draw_outs, straight_draw_outs, full_house_draw_outs)
+
+
+
 
 
 
@@ -323,6 +332,7 @@ class TemplateBot(Bot):
                 return {'type': 'raise', 'amount': my_player.stack}
                 
         elif state.round == 'flop' or state.round == 'turn':
+            
             num_outs = calculate_outs (hand, state)
             
             print ("I have" + num_outs + "outs!")
@@ -340,8 +350,19 @@ class TemplateBot(Bot):
                     return {'type': 'raise', 'amount': 2/3 * state.pot}
             else:
                 return {'type': 'fold'}
-                
-       # elif state.round == 'river':
+
+        else:
+            strength = hand_strength(hand,state)[0]
+            if strength >= 0.4:
+                return {'type': 'raise', 'amount': my_player.stack}
+            
+
+            
+
+
+
+
+
             
 
         """
