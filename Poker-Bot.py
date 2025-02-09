@@ -105,6 +105,109 @@ def preflop(hand):
 
     return poker_ranking[combo]
 
+HAND_RANKINGS = {
+    "Royal Flush": 1.0,
+    "Straight Flush": 0.9,
+    "Four of a Kind": 0.8,
+    "Full House": 0.7,
+    "Flush": 0.6,
+    "Straight": 0.5,
+    "Three of a Kind": 0.4,
+    "Two Pair": 0.3,
+    "One Pair": 0.2,
+    "High Card": 0.0,
+}
+
+def evaluate_hand(perm):
+    """Evaluates hand strength based on the given hand and board cards."""
+    all_cards = perm
+    ranks = sorted([card.rank for card in all_cards], reverse=True)
+    suits = [card.suit for card in all_cards]
+
+    rank_counts = Counter(ranks)
+    suit_counts = Counter(suits)
+
+    pairs = [r for r, count in rank_counts.items() if count == 2]
+    trips = [r for r, count in rank_counts.items() if count == 3]
+    quads = [r for r, count in rank_counts.items() if count == 4]
+
+    is_flush = max(suit_counts.values()) >= 5
+    unique_ranks = sorted(set(ranks), reverse=True)
+    is_straight = any(
+        unique_ranks[i] - unique_ranks[i + 4] == 4 for i in range(len(unique_ranks) - 4)
+    )
+
+    if is_flush and set(unique_ranks[:5]) == {14, 13, 12, 11, 10}:
+        return "Royal Flush"
+
+    if is_flush and is_straight:
+        return "Straight Flush"
+
+    # Four of a Kind: Four cards of the same rank
+    if quads:
+        return "Four of a Kind"
+
+    # Full House: Three of a kind + One pair
+    if trips and pairs:
+        return "Full House"
+
+    # Flush: Five cards of the same suit
+    if is_flush:
+        return "Flush"
+
+    # Straight: Five consecutive cards
+    if is_straight:
+        return "Straight"
+
+    # Three of a Kind: Three cards of the same rank
+    if trips:
+        return "Three of a Kind"
+
+    # Two Pair: Two different pairs
+    if len(pairs) >= 2:
+        return "Two Pair"
+
+    # One Pair: A single pair
+    if pairs:
+        return "One Pair"
+
+    # High Card: No other combination
+    return "High Card"
+
+class Card:
+    rank: Rank
+    suit: Suit
+
+def generate_deck():
+    """Generate a standard deck of 52 cards."""
+    return [Card(rank, suit) for rank in Rank for suit in Suit]
+
+def generate_poker_hands(deck):
+    """Generate every possible 2-card poker hand from the given deck."""
+    return list(itertools.combinations(deck, 2))
+
+def hand_strength(hand, state):
+    highScore = 0
+    highType = "None"
+    community_cards = state.cards
+    total_cards = list(hand) + community_cards
+    for perm in itertools.permutations(total_cards, 5):
+        type = evaluate_hand(perm)
+        if (type in HAND_RANKINGS):
+            score = HAND_RANKINGS[type]
+            if (score > highScore): 
+                highScore = score
+                highType = type
+    return highScore, highType
+
+def average_hand_strength(state):
+    deck = generate_deck()
+    hands = generate_poker_hands(deck)
+    total = 0
+    for hand in hands:
+        total += hand_strength(hand, state)[0]
+    return total / len(hands)
+
 
 poker_ranking = {
     'AA': 0, 'AKs': 2, 'AQs': 2, 'AJs': 3, 'ATs': 5, 'A9s': 8, 'A8s': 10, 'A7s': 13, 'A6s': 14, 'A5s': 12, 'A4s': 14, 'A3s': 14, 'A2s': 17,
