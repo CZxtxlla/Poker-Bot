@@ -4,6 +4,8 @@ import argparse
 from tg.bot import Bot
 import time
 from enum import Enum, IntEnum
+from collections import Counter
+import itertools
 
 parser = argparse.ArgumentParser(
     prog='Template bot',
@@ -218,7 +220,7 @@ poker_ranking = {
     'A9o': 32, 'K9o': 35, 'Q9o': 36, 'J9o': 34, 'T9o': 31, '99': 7, '98s': 17, '97s': 24, '96s': 29, '95s': 38, '94s': 47, '93s': 47, '92s': 49,
     'A8o': 39, 'K8o': 50, 'Q8o': 53, 'J8o': 48, 'T8o': 43, '98o': 42, '88': 9, '87s': 21, '86s': 27, '85s': 33, '84s': 40, '83s': 53, '82s': 54,
     'A7o': 45, 'K7o': 57, 'Q7o': 66, 'J7o': 59, 'T7o': 59, '97o': 55, '87o' : 52, '77': 12, '76s': 25, '75s': 28, '74s': 37, '73s': 45, '72s': 56,
-    'A6o': 51, 'K6o': 60, 'Q6o': 71, 'J6o': 80, 'T6o': 74, '96o': 68, '86':61, '76':57, '66': 16, '65s': 27, '64s': 29, '63s': 38, '62s': 49,
+    'A6o': 51, 'K6o': 60, 'Q6o': 71, 'J6o': 80, 'T6o': 74, '96o': 68, '86o':61, '76o': 57, '66': 16, '65s': 27, '64s': 29, '63s': 38, '62s': 49,
     'A5o': 44, 'K5o': 63, 'Q5o': 75, 'J5o': 82, 'T5o': 89, '95o': 83, '85o': 73, '75o': 65, '65o': 58, '55': 20,'54s': 28, '53s': 32, '52s': 39,  
     'A4o': 46, 'K4o': 67, 'Q4o': 76, 'J4o': 85, 'T4o': 90, '94o': 95, '84o': 88, '74o': 78, '64o': 70, '54o': 62,'44': 23, '43s': 36, '42s': 41, 
     'A3o': 49, 'K3o': 67, 'Q3o': 77, 'J3o': 86, 'T3o': 92, '93o': 96, '83o': 98, '73o': 93, '63o': 81, '53o': 72, '43': 76, '33': 23, '32s': 46,  
@@ -250,65 +252,56 @@ break_even_odds = {
 }
 
 def calculate_outs(hand, state):
-    combined_cards = hand + state.cards
+    
+    combined = hand + state.cards # whole cards + community cards
 
-    # Flush draw: if 4 cards share the same suit, assume 9 outs.
+    # Flush draw check
     suit_counts = {}
-    for card in combined_cards:
-        suit = card.suit
-        suit_counts[suit] = suit_counts.get(suit, 0) + 1
-    flush_draw_outs = 0
+    for card in combined:
+        suit_counts[card.suit] = suit_counts.get(card.suit, 0) + 1
+
+    flush_outs = 0
     for suit, count in suit_counts.items():
-        if count == 4:
-            flush_draw_outs = 9
+        if count == 4: 
+            flush_outs = max(flush_outs, 9) #9 outs for a flush draw (checking all suits so gotta take max)
 
-    # Straight draw: look for any 5-card sequence with exactly 4 cards present.
-    card_ranks = [card.rank for card in combined_cards]
-    unique_card_ranks = set(card_ranks)
-    if 1 in unique_card_ranks:
-        unique_card_ranks.add(14)  # treat Ace as high too
-    sorted_unique_ranks = sorted(unique_card_ranks)
-    straight_draw_outs = 0
-    for start_value in range(1, 11):
-        sequence = list(range(start_value, start_value + 5))
-        present_count = sum(1 for rank in sequence if rank in sorted_unique_ranks)
-        if present_count == 4:
-            missing_rank = next(rank for rank in sequence if rank not in sorted_unique_ranks)
-            # Open-ended if missing at either end, gutshot if missing in the middle.
-            if missing_rank == sequence[0] or missing_rank == sequence[-1]:
-                straight_draw_outs = max(straight_draw_outs, 8)
+    # Straight draw check
+    ranks = [card.rank for card in combined]
+    unique_ranks = set(ranks)
+
+    # If there's an ace it can be part of a bottom or top straight so should represent it twice.
+    if 1 in unique_ranks:
+        unique_ranks.add(14)
+
+    unique_ranks = sorted(unique_ranks)
+
+    straight_outs = 0
+
+    for starting_card in range(1, 11):
+        straight_seq = list(range(starting_card, starting_card + 5))
+
+        count = 0
+        
+        for rank in straight_seq: 
+            if rank in unique_ranks:
+                count +=1
+
+        if count == 4: #we have a straight draw!
+            # Identify the missing card.
+            missing = None
+
+            for rank in straight_seq:
+                if rank not in unique_ranks:
+                    missing = rank
+        
+            #open-ended vs gutshot draw out counting
+            
+            if missing == straight_seq[0] or missing == straight_seq[-1]: #open-ended straight draw
+                straight_outs = max(straight_outs, 8)
             else:
-                straight_draw_outs = max(straight_draw_outs, 4)
+                straight_outs = max(straight_outs, 4) #gutshot draw
 
-    # Full house draw:
-   
-    full_house_draw_outs = 0
-    rank_frequency = {}
-    for card in combined_cards:
-        rank_frequency[card.rank] = rank_frequency.get(card.rank, 0) + 1
-
-    # Check for a pocket pair
-    if hand[0].rank == hand[1].rank:
-        pair_rank = hand[0].rank
-        if rank_frequency[pair_rank] == 2:
-            # Pair exists only in hand 
-            full_house_draw_outs = max(full_house_draw_outs, 2)
-        elif rank_frequency[pair_rank] == 3:
-            # Already hit a set
-            full_house_draw_outs = max(full_house_draw_outs, 1)
-
-    # Check if board contains any pair
-    board_rank_frequency = {}
-    for card in state.cards:
-        board_rank_frequency[card.rank] = board_rank_frequency.get(card.rank, 0) + 1
-    board_has_pair = any(count >= 2 for count in board_rank_frequency.values())
-    if board_has_pair:
-        full_house_draw_outs = max(full_house_draw_outs, 4)
-
-    return max(flush_draw_outs, straight_draw_outs, full_house_draw_outs)
-
-
-
+    return max(flush_outs, straight_outs) #actual number of outs
 
 
 
@@ -328,41 +321,34 @@ class TemplateBot(Bot):
 
         if (state.round == 'pre-flop'):
             print('preflop', preflop(hand))
-            if (preflop(hand) > 24):
-                return {'type': 'raise', 'amount': my_player.stack}
+            if (preflop(hand) < 30):
+                return {'type': 'call'}
+                #return {'type': 'raise', 'amount': my_player.stack}
+            else:
+                return {'type': 'fold'}
                 
         elif state.round == 'flop' or state.round == 'turn':
-            
             num_outs = calculate_outs (hand, state)
+            strength = hand_strength(hand, state)[0]
             
-            print ("I have" + num_outs + "outs!")
+            print ("I have {} outs!".format(num_outs))
             
             odds_needed_to_call = break_even_odds[num_outs]
+            adjusted_threshold = odds_needed_to_call * (1 - 0.6 * strength)
 
             pot_odds = state.pot / (state.target_bet - player.current_bet + 0.0001)
 
-            if pot_odds > odds_needed_to_call and pot_odds < odds_needed_to_call*2:
+            if pot_odds > adjusted_threshold and pot_odds < adjusted_threshold*2:
                 return {'type': 'call'}
-            elif pot_odds >= odds_needed_to_call * 2:
+            elif pot_odds >= adjusted_threshold * 2:
                 if (my_player.stack < 2/3 * state.pot):
                     return {'type': 'raise', 'amount': my_player.stack}
                 else:                            
                     return {'type': 'raise', 'amount': 2/3 * state.pot}
             else:
                 return {'type': 'fold'}
-
-        else:
-            strength = hand_strength(hand,state)[0]
-            if strength >= 0.4:
-                return {'type': 'raise', 'amount': my_player.stack}
-            
-
-            
-
-
-
-
-
+                
+       # elif state.round == 'river':
             
 
         """
@@ -387,6 +373,3 @@ class TemplateBot(Bot):
 if __name__ == "__main__":
     bot = TemplateBot(args.host, args.port, args.room, args.username)
     asyncio.run(bot.start())
-
-
-
