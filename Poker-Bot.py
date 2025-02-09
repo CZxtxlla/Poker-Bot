@@ -168,3 +168,75 @@ class TemplateBot(Bot):
 if __name__ == "__main__":
     bot = TemplateBot(args.host, args.port, args.room, args.username)
     asyncio.run(bot.start())
+
+
+
+HAND_RANKINGS = {
+    "Royal Flush": 1.0,
+    "Straight Flush": 0.9,
+    "Four of a Kind": 0.8,
+    "Full House": 0.7,
+    "Flush": 0.6,
+    "Straight": 0.5,
+    "Three of a Kind": 0.4,
+    "Two Pair": 0.3,
+    "One Pair": 0.2,
+    "High Card": 0.0,
+}
+
+def evaluate_hand(hand, state):
+    """Evaluates hand strength based on the given hand and board cards."""
+    all_cards = list(hand) + state.cards
+    ranks = sorted([card.rank for card in all_cards], reverse=True)
+    suits = [card.suit for card in all_cards]
+
+    rank_counts = Counter(ranks)
+    suit_counts = Counter(suits)
+
+    pairs = [r for r, count in rank_counts.items() if count == 2]
+    trips = [r for r, count in rank_counts.items() if count == 3]
+    quads = [r for r, count in rank_counts.items() if count == 4]
+
+    is_flush = max(suit_counts.values()) >= 5
+    unique_ranks = sorted(set(ranks), reverse=True)
+    is_straight = any(
+        unique_ranks[i] - unique_ranks[i + 4] == 4 for i in range(len(unique_ranks) - 4)
+    )
+
+    if is_flush and set(unique_ranks[:5]) == {14, 13, 12, 11, 10}:
+        return "Royal Flush"
+
+    if is_flush and is_straight:
+        return "Straight Flush"
+
+    # Four of a Kind: Four cards of the same rank
+    if quads:
+        return "Four of a Kind"
+
+    # Full House: Three of a kind + One pair
+    if trips and pairs:
+        return "Full House"
+
+    # Flush: Five cards of the same suit
+    if is_flush:
+        return "Flush"
+
+    # Straight: Five consecutive cards
+    if is_straight:
+        return "Straight"
+
+    # Three of a Kind: Three cards of the same rank
+    if trips:
+        return "Three of a Kind"
+
+    # Two Pair: Two different pairs
+    if len(pairs) >= 2:
+        return "Two Pair"
+
+    # One Pair: A single pair
+    if pairs:
+        return "One Pair"
+
+    # High Card: No other combination
+    return "High Card"
+
