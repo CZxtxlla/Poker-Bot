@@ -122,10 +122,66 @@ poker_ranking = {
     'A2o': 54, 'K2o': 69, 'Q2o': 79, 'J2o': 87, 'T2o': 94, '92o': 97, '82o': 99, '72o': 100, '62o': 95, '52o': 84, '42o':86, '32o': 91, '22': 24
     }
 
+def calculate_outs(hand, state):
+    
+    combined = hand + state.cards # whole cards + community cards
+
+    # Flush draw check
+    suit_counts = {}
+    for card in combined:
+        suit_counts[card.suit] = suit_counts.get(card.suit, 0) + 1
+
+    flush_outs = 0
+    for suit, count in suit_counts.items():
+        if count == 4: 
+            flush_outs = max(flush_outs, 9) #9 outs for a flush draw (checking all suits so gotta take max)
+
+    # Straight draw check
+    ranks = [card.rank for card in combined]
+    unique_ranks = set(ranks)
+
+    # If there's an ace it can be part of a bottom or top straight so should represent it twice.
+    if 1 in unique_ranks:
+        unique_ranks.add(14)
+
+    unique_ranks = sorted(unique_ranks)
+
+    straight_outs = 0
+
+    for starting_card in range(1, 11):
+        straight_seq = list(range(starting_card, starting_card + 5))
+
+        count = 0
+        
+        for rank in straight_seq: 
+            if rank in unique_ranks:
+                count +=1
+
+        if count == 4: #we have a straight draw!
+            # Identify the missing card.
+            missing = None
+
+            for rank in straigh_seq:
+                if rank not in unique_ranks:
+                    missing = rank
+        
+            #open-ended vs gutshot draw out counting
+            
+            if missing == straight_seq[0] or missing == straight_seq[-1]: #open-ended straight draw
+                straight_outs = max(straight_outs, 8)
+            else:
+                straight_outs = max(straight_outs, 4) #gutshot draw
+
+    # Return the higher of the two out counts.
+    return max(flush_outs, straight_outs)
+
+
 
 class TemplateBot(Bot):
     def act(self, state, hand):
-
+        for card in hand:
+            print (card.suit, card.rank)
+            
         my_player = None
         for player in state.players:
             if player.id == self.my_id:
