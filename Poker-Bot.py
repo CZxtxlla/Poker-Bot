@@ -262,7 +262,7 @@ def calculate_outs(hand, state):
         if count == 4:
             flush_draw_outs = 9
 
-    # Straight draw: look for any 5-card sequence with exactly 4 cards present.
+    # Straight draw
     card_ranks = [card.rank for card in combined_cards]
     unique_card_ranks = set(card_ranks)
     if 1 in unique_card_ranks:
@@ -274,7 +274,7 @@ def calculate_outs(hand, state):
         present_count = sum(1 for rank in sequence if rank in sorted_unique_ranks)
         if present_count == 4:
             missing_rank = next(rank for rank in sequence if rank not in sorted_unique_ranks)
-            # Open-ended if missing at either end, gutshot if missing in the middle.
+            # Open-ended if missing at either end, gutshot if missing in the middle
             if missing_rank == sequence[0] or missing_rank == sequence[-1]:
                 straight_draw_outs = max(straight_draw_outs, 8)
             else:
@@ -297,7 +297,7 @@ def calculate_outs(hand, state):
             # Already hit a set
             full_house_draw_outs = max(full_house_draw_outs, 1)
 
-    # Check if board contains any pair
+    # Check if board contains any pair and thus we can hit a fh
     board_rank_frequency = {}
     for card in state.cards:
         board_rank_frequency[card.rank] = board_rank_frequency.get(card.rank, 0) + 1
