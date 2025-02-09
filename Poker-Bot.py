@@ -239,8 +239,7 @@ def calculate_outs(hand, state):
             else:
                 straight_outs = max(straight_outs, 4) #gutshot draw
 
-    # Return the higher of the two out counts.
-    return max(flush_outs, straight_outs)
+    return max(flush_outs, straight_outs) #actual number of outs
 
 
 
@@ -254,10 +253,6 @@ class TemplateBot(Bot):
             if player.id == self.username:
                 my_player = player
                 break
-
-        if my_player is None:
-            raise ValueError(f"No player with id {self.my_id} found in state.players")
-
         
         print('asked to act')
         print('acting', state, hand, self.my_id)
@@ -266,8 +261,8 @@ class TemplateBot(Bot):
             print('preflop', preflop(hand))
             if (preflop(hand) > 24):
                 return {'type': 'raise', 'amount': my_player.stack}
-        else:
-            return {'type': 'call'}
+        elif state.round == 'flop' or state.round == 'turn':
+            num_outs = calculate_outs (hand, state)
 
         """
         if (preflop(hand) > 24):
